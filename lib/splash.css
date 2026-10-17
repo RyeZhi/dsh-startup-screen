@@ -324,7 +324,8 @@
   align-items: center;
   gap: 0;
   pointer-events: none;
-  transition: opacity 340ms ease;
+  /* top 也要过渡：生物识别期间这一块会上移让位，动一下比瞬移舒服 */
+  transition: opacity 340ms ease, top 460ms cubic-bezier(0.16, 0.84, 0.24, 1);
 }
 /* 终幕时整块中央区（状态行 / 分隔线 / 鲸鱼 / 虚线）必须整体退场，
    否则会和 WELCOME 版式叠在一起 */
@@ -424,23 +425,27 @@
   opacity: 0.5;
 }
 
-/* 右侧等宽信息行（对应参考片 "· ID CONFIRMED : JOYC"） */
+/* 右侧等宽信息行（对应参考片 "· ID CONFIRMED : JOYC"）
+   原先挂在环的右侧（left: calc(50% + 190px); top: 49%），全屏时准星直径
+   能到 min(56vw, 86vh, 1040px)，右缘压过来就和这行撞上。现在改挂页脚上方、
+   与 POWERED BY 同一条右边缘，彻底离开中央区。 */
 .dsu-idline {
   position: absolute;
-  left: calc(50% + 190px);
-  top: 49%;
-  transform: translateY(-50%) translateX(16px);
+  right: 46px;
+  bottom: 76px;
+  text-align: right;
   z-index: 22;
   font-family: var(--dsu-mono);
   font-size: 12px;
   letter-spacing: 0.2em;
   color: var(--dsu-ink-soft);
   opacity: 0;
+  transform: translateX(16px);
   transition: opacity 520ms ease, transform 520ms cubic-bezier(0.16, 0.84, 0.24, 1);
   transition-delay: 520ms;
   white-space: nowrap;
 }
-.dsu-idline.dsu-in { opacity: 1; transform: translateY(-50%); }
+.dsu-idline.dsu-in { opacity: 1; transform: none; }
 
 /* ── 环形准星（验证通过）───────────────────────────────────────────────── */
 /* 照原片：环居中、直径约 56vw，状态字就落在环心里，两者是一个整体。
@@ -601,6 +606,134 @@
   color: var(--dsu-ink);
 }
 .dsu-card-row b.dsu-zhname { font-family: var(--dsu-zh); letter-spacing: 0.1em; }
+
+/* ── 虹膜验证（模拟，authMode=iris）────────────────────────────────────
+   装在身份卡内部：卡片本来就居中在 60% 处，把里面三行换成扫描仪即可，
+   中央大字和底部按钮都不用动，所以不可能撞版。
+   眼睛用 SVG 画轮廓 —— 上一版用 CSS 圆环（border-radius: 50% + border）在
+   真实页面里被渲染成了圆角方框，本地复现不出来；改成画轮廓后不再依赖
+   border-radius，也不受别处样式影响。强调色只留给那条扫描光带，
+   比对通过时虹膜环才转成强调色。 */
+.dsu-iris {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-height: 112px;
+  padding: 8px 2px;
+}
+.dsu-iris-svg { display: block; flex: none; }
+
+/* ── 图形配色：照参考图来，固定不随主题变 ───────────────────────────────
+   白盘 + 黑点阵。深色主题下白盘自己就跳出来（就是参考图那张）；
+   浅色主题下白盘接近暖白底板，靠 .dsu-iris-rim 那道极细的墨边把轮廓定住。 */
+.dsu-iris-body { fill: #ffffff; }
+.dsu-iris-rim {
+  fill: none;
+  /* 浅色主题里 --dsu-ink 是黑的，这条边可见；深色主题里它是近白，
+     压在白盘边沿上等于看不见 —— 不用为主题各写一套 */
+  stroke: var(--dsu-ink);
+  stroke-opacity: 0.32;
+  stroke-width: 1;
+}
+/* 虹膜点阵：黑色小圆点（圆头 + 极短 dash = 一个点） */
+.dsu-iris-dot { fill: none; stroke: #0a0a0a; stroke-linecap: round; }
+/* 瞳孔是白盘上的实心黑圆，高光是一点白 */
+.dsu-iris-pupil { fill: #0a0a0a; }
+.dsu-iris-glint { fill: #ffffff; }
+/* 四角角标 + 每个端点的小圆点 */
+.dsu-iris-frame {
+  fill: none;
+  stroke: var(--dsu-ink);
+  stroke-opacity: 0.5;
+  stroke-width: 1;
+}
+.dsu-iris-frame-end { fill: var(--dsu-ink); fill-opacity: 0.5; }
+/* 指纹比虹膜高一点，光带扫得慢一些 */
+.dsu-iris-fp .dsu-iris-beam { animation-duration: 1.9s; }
+/* 只有比对通过才亮起来的一圈细环 */
+.dsu-iris-halo {
+  fill: none;
+  stroke: var(--dsu-accent);
+  stroke-width: 1;
+  opacity: 0;
+  transition: opacity 240ms ease;
+}
+
+/* 扫描光带：扫描过程中唯一的一处强调色 */
+.dsu-iris-beam {
+  fill: var(--dsu-accent);
+  opacity: 0;
+  animation: dsu-iris-beam 1.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.dsu-iris-info { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.dsu-iris-zh {
+  font-family: var(--dsu-zh);
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--dsu-ink);
+  white-space: nowrap;
+}
+.dsu-iris-en {
+  font-family: var(--dsu-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--dsu-muted);
+  white-space: nowrap;
+}
+.dsu-iris-bar {
+  display: block;
+  width: 128px;
+  height: 3px;
+  background: var(--dsu-hair);
+  overflow: hidden;
+}
+.dsu-iris-bar b {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--dsu-accent);
+}
+/* 指纹那一路的等待时长由用户决定，进度条不假装知道进度：
+   改成一段来回穿梭的光，读作"还在等"，而不是"卡在 40%" */
+.dsu-iris-bar--wait b {
+  width: 34%;
+  animation: dsu-iris-shuttle 1.35s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
+}
+
+/* 比对通过：光带收掉、点阵淡下去（像已经读出结果）、外圈亮一道细环 */
+.dsu-iris.dsu-ok .dsu-iris-beam { animation: none; opacity: 0; }
+.dsu-iris.dsu-ok .dsu-iris-dot { opacity: 0.42; }
+.dsu-iris.dsu-ok .dsu-iris-halo { opacity: 1; }
+.dsu-iris.dsu-ok .dsu-iris-svg { animation: dsu-iris-lock 380ms cubic-bezier(0.2, 0.9, 0.25, 1); }
+/* 指纹通过时把穿梭光条停掉、填满 */
+.dsu-iris.dsu-ok .dsu-iris-bar--wait b { width: 100%; animation: none; transform: none; }
+
+@keyframes dsu-iris-shuttle {
+  from { transform: translateX(0); }
+  to { transform: translateX(194%); }
+}
+/* 光带扫满整个符号：虹膜的盘和指纹的外环都是半径 40 的圆（y 6→86），
+   所以从 8px 扫到 84px，两端各留一点，别贴着边沿就消失 */
+@keyframes dsu-iris-beam {
+  0% { transform: translateY(8px); opacity: 0; }
+  10% { opacity: 0.95; }
+  90% { opacity: 0.95; }
+  100% { transform: translateY(84px); opacity: 0; }
+}
+@keyframes dsu-iris-lock {
+  0% { transform: scale(0.96); }
+  55% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+/* 系统级"减少动态效果"时，把循环动画停掉，只留静态形态 */
+@media (prefers-reduced-motion: reduce) {
+  .dsu-iris-beam { animation: none; opacity: 0.45; }
+  .dsu-iris-bar--wait b { animation: none; width: 100%; transform: none; }
+  .dsu-iris.dsu-ok .dsu-iris-svg { animation: none; }
+}
 
 /* ── 终幕：WELCOME ─────────────────────────────────────────────────────── */
 .dsu-welcome {
@@ -1091,8 +1224,9 @@
   50% { height: 100%; }
 }
 
-/* 窄窗口里右侧那行等宽小字会和环撞上，直接收掉 */
-@media (max-width: 1180px) {
+/* 换成页脚上方之后不再和准星相撞，只有很窄的窗口才会和底部字幕挤在一起 —— 
+   阈值从 1180px 收到 900px */
+@media (max-width: 900px) {
   .dsu-idline { display: none; }
 }
 
@@ -1102,3 +1236,57 @@
   #dsh-startup-root .dsu-ret-rot-b { animation: none; }
   #dsh-startup-root .dsu-scanline.dsu-go { animation: none; }
 }
+
+/* ── 生物识别的居中舞台（虹膜 / 指纹共用）─────────────────────────────────
+   两枚符号的纹理都是"细线条"（虹膜点径 1.45px、指纹线宽 4.2），只有在
+   250px 左右才画得出来，所以验证时不放在身份卡里，而是整屏居中显示，
+   底部按钮同时淡掉 —— 这一刻画面只留这枚符号。
+   几何参数见 lib/splash.js 的 irisMarkup / fingerprintMarkup。 */
+.dsu-iris-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 360ms ease;
+}
+.dsu-iris-stage.dsu-in { opacity: 1; }
+/* 图形**严格居中于视口**：只让 SVG 参与居中计算，说明文字改成绝对定位挂在
+   它下方。否则「图形 + 文字」整体居中会把图形顶到视口中线以上
+   （实测偏上约 34px，一眼就能看出不在中间）。 */
+.dsu-iris-stage .dsu-iris {
+  position: relative;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  padding: 0;
+}
+/* 矮窗口（30vh < 250px）时跟着缩，免得符号撞上顶部品牌块 */
+.dsu-iris-stage .dsu-iris-svg { width: min(250px, 30vh); height: auto; }
+.dsu-iris-stage .dsu-iris-info {
+  position: absolute;
+  top: calc(100% + 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  white-space: nowrap;
+}
+/* 验证期间：中央大字**不消失**，只上移让出画面中央给符号。
+   它是这一步的标题（"身份资料确认 / IDENTITY VERIFICATION"），
+   整块淡掉会让整屏只剩一枚图形，没人知道正在验什么。 */
+.dsu-iris-focus .dsu-center { top: 23%; }
+.dsu-iris-focus .dsu-action { opacity: 0 !important; }
+
+/* ── 指纹符号（authMode=touchid）─────────────────────────────────────────
+   照参考图取几何：六条同心环 + 中心一点，环半径按外径归一化
+   0.204 / 0.371 / 0.543 / 0.715 / 0.887 / 1.000（间距均匀），线宽 0.118R；
+   外侧四条环的缺口集中在左下（120°–145°）—— 这是参考图最显著的特征，
+   缺口都在同一侧，读起来才是一枚指纹，而不是同心圆靶。
+   线条走 --dsu-ink：深色主题下就是参考图那张"白线黑底"，浅色主题自动反相。 */
+.dsu-fp-line { fill: none; stroke: var(--dsu-ink); stroke-width: 3.44; stroke-linecap: round; }
+.dsu-fp-dot { fill: var(--dsu-ink); stroke: none; }
+/* 比对通过：符号收一下（机构闭合的手感），外圈亮一道细环 */
+.dsu-iris-fp.dsu-ok .dsu-iris-svg { animation: dsu-iris-lock 380ms cubic-bezier(0.2, 0.9, 0.25, 1); }
