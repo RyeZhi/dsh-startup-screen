@@ -311,7 +311,8 @@ console.log('\n[8] 终幕用真声欢迎语（来自 Video Project 3 的 line-6�
 {
   const src = fs.readFileSync(BUNDLE, 'utf8')
   check('全程没有 voice.tts( 调用（不再用 TTS 念白）', !/voice\.tts\(/.test(src))
-  check('终幕挂了 line-6 素材', /voice\.line\(null, null, 'line-6'\)/.test(src))
+  check('终幕挂了 line-6 素材', /voice\.line\([\s\S]{0,300}?'line-6'\s*\)/.test(src))
+  check('终幕 TTS 兜底文案带身份名称', /voice\.line\(\s*'Welcome, '/.test(src))
   check('揭幕前会等欢迎语播完', /\.then\(function \(\) \{ return welcome \}\)/.test(src))
   check('预加载包含 line-6', /ensureAsset\('line-6'\)/.test(src))
   check('五步仍然各自挂着真声素材', (src.match(/audio: 'line-/g) || []).length === 5)
