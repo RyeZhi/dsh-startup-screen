@@ -1,5 +1,20 @@
 # dsh-startup-screen
 
+> **Fork 声明**　本仓库是 [6shenhonghong9/dsh-startup-screen](https://github.com/6shenhonghong9/dsh-startup-screen)
+> 的修改版，原项目与全部原创代码、文案版权归 [沈宏宏](https://github.com/6shenhonghong9) 所有，
+> 遵循原仓库的 [MIT License](LICENSE)。
+> 相对上游的全部改动见 [MODIFICATIONS.md](MODIFICATIONS.md)。
+>
+> ⚠️ 上游作者已说明：`lib/assets/` 下的音频素材取自第三方视频、**未获授权**，
+> 不在 MIT 覆盖范围内，仅限个人使用，请勿用于商业场景。
+
+本分支在原版基础上做了三组增强：**终幕 TTS 欢迎语**、**ID CONFIRMED 挪位与延后出现**、
+**身份确认接入真系统验证（Touch ID / 登录密码）与模拟虹膜扫描**，另修复了动画期间
+按键漏进聊天输入框等问题。安装方式与原版一致（见 INSTALL.md）；若要启用真系统验证，
+还需编译一个 macOS 小工具，见 MODIFICATIONS.md 的「系统验证（Touch ID）」一节。
+
+---
+
 DeepSeek Harness 的启动界面与启动动画插件。
 
 黑幕 DeepSeek 标识 → 过曝洗白 → 暖白「技术档案」底板 → 五步交互式访问授权 →
